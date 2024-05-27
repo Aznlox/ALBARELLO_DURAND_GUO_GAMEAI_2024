@@ -25,10 +25,45 @@ namespace AI_BehaviorTree_AIImplementation
 
         public void SetAIGameWorldUtils(GameWorldUtils parGameWorldUtils) { AIGameWorldUtils = parGameWorldUtils; }
 
-        //Fin du bloc de fonction nécessaire (Attention ComputeAIDecision en fait aussi partit)
-        public NodeManager node;
         public List<AIAction> ComputeAIDecision()
         {
+            /* actionList.Clear();            
+             //actionList.Add(new AIActionFire());
+             /*List<PlayerInformations> playerInfos = AIGameWorldUtils.GetPlayerInfosList();
+             PlayerInformations myPlayerInfos = GetPlayerInfos(AIId, playerInfos);            
+             PlayerInformations target = null;
+             foreach (PlayerInformations playerInfo in playerInfos)
+             {
+                 if (!playerInfo.IsActive)
+                     continue;
+
+                 if (playerInfo.PlayerId == myPlayerInfos.PlayerId)
+                     continue;
+
+                 target = playerInfo;
+                 break;
+             }
+
+             if (target == null)
+                 return actionList;
+
+             actionList.Add(new AIActionLookAtPosition(target.Transform.Position));
+
+             if (Vector3.Distance(myPlayerInfos.Transform.Position, target.Transform.Position) > 10.0f)
+                 actionList.Add(new AIActionMoveToDestination(target.Transform.Position));
+             else
+                 actionList.Add(new AIActionStopMovement());
+
+             RaycastHit hit;
+             Vector3 direction = myPlayerInfos.Transform.Rotation * Vector3.forward;
+             if (Physics.Raycast(myPlayerInfos.Transform.Position, direction.normalized, out hit, 100.0f))
+             {
+                 if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.collider.gameObject.layer)))
+                     actionList.Add(new AIActionFire());
+             }
+
+             return actionList;*/
+
             List<AIAction> actionList = new List<AIAction>();
             List<PlayerInformations> playerInfos = AIGameWorldUtils.GetPlayerInfosList();
             PlayerInformations myPlayerInfos = GetPlayerInfos(AIId, playerInfos);
@@ -78,5 +113,8 @@ namespace AI_BehaviorTree_AIImplementation
             Assert.IsTrue(false, "GetPlayerInfos : PlayerId not Found");
             return null;
         }
+
+        public NodeManager nodeManager;
+        //public List<AIAction> actionList = new List<AIAction>();
     }
 }

@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AI_BehaviorTree_AIImplementation</RootNamespace>
-    <AssemblyName>AI_BehaviorTree_AIImplementation_1</AssemblyName>
+    <AssemblyName>Tree_Source</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.19041.0</TargetPlatformVersion>
@@ -122,9 +122,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AIDecisionMaker.cs" />
-    <Compile Include="Condition.cs" />
-    <Compile Include="ConditionAlwaysTrue.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="NodeManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Selector.cs" />
     <Compile Include="Sequence.cs" />
