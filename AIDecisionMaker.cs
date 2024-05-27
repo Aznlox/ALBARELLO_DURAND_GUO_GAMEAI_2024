@@ -32,7 +32,7 @@ namespace AI_BehaviorTree_AIImplementation
             List<AIAction> actionList = new List<AIAction>();
             List<PlayerInformations> playerInfos = AIGameWorldUtils.GetPlayerInfosList();
             PlayerInformations myPlayerInfos = GetPlayerInfos(AIId, playerInfos);
-
+            
             PlayerInformations target = null;
             foreach (PlayerInformations playerInfo in playerInfos)
             {
