@@ -26,7 +26,7 @@ namespace AI_BehaviorTree_AIImplementation
         public void SetAIGameWorldUtils(GameWorldUtils parGameWorldUtils) { AIGameWorldUtils = parGameWorldUtils; }
 
         //Fin du bloc de fonction nécessaire (Attention ComputeAIDecision en fait aussi partit)
-
+        public NodeManager node;
         public List<AIAction> ComputeAIDecision()
         {
             List<AIAction> actionList = new List<AIAction>();

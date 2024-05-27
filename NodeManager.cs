@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AI_BehaviorTree_AIImplementation
 {
-    class NodeManager
+    public class NodeManager
     {
         Node start;
         public NodeManager(Node s)
