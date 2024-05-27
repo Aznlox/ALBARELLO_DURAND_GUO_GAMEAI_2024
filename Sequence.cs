@@ -2,9 +2,9 @@
 
 namespace AI_BehaviorTree_AIImplementation
 {
-    class Sequence : Node
+    public class Sequence : Node
     {
-        protected List<Node> child;
+        protected List<Node> child = new List<Node>();
         public void AddChild(Node node)
         {
             child.Add(node);

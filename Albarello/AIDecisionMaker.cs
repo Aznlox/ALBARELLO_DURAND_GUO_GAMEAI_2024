@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
+using UnityEngine.AI;
 
 namespace AI_BehaviorTree_AIImplementation
 {
@@ -25,80 +26,60 @@ namespace AI_BehaviorTree_AIImplementation
 
         public void SetAIGameWorldUtils(GameWorldUtils parGameWorldUtils) { AIGameWorldUtils = parGameWorldUtils; }
 
-        public List<AIAction> ComputeAIDecision()
+        Vector3 CalculateTangent(Vector3 v)
         {
-            /* actionList.Clear();            
-             //actionList.Add(new AIActionFire());
-             /*List<PlayerInformations> playerInfos = AIGameWorldUtils.GetPlayerInfosList();
-             PlayerInformations myPlayerInfos = GetPlayerInfos(AIId, playerInfos);            
-             PlayerInformations target = null;
-             foreach (PlayerInformations playerInfo in playerInfos)
-             {
-                 if (!playerInfo.IsActive)
-                     continue;
+            Vector3 arbitrary = (v != Vector3.up) ? Vector3.up : Vector3.right;
+            Vector3 tangent = Vector3.Cross(v, arbitrary).normalized;
+            return tangent;
+        }
 
-                 if (playerInfo.PlayerId == myPlayerInfos.PlayerId)
-                     continue;
-
-                 target = playerInfo;
-                 break;
-             }
-
-             if (target == null)
-                 return actionList;
-
-             actionList.Add(new AIActionLookAtPosition(target.Transform.Position));
-
-             if (Vector3.Distance(myPlayerInfos.Transform.Position, target.Transform.Position) > 10.0f)
-                 actionList.Add(new AIActionMoveToDestination(target.Transform.Position));
-             else
-                 actionList.Add(new AIActionStopMovement());
-
-             RaycastHit hit;
-             Vector3 direction = myPlayerInfos.Transform.Rotation * Vector3.forward;
-             if (Physics.Raycast(myPlayerInfos.Transform.Position, direction.normalized, out hit, 100.0f))
-             {
-                 if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.collider.gameObject.layer)))
-                     actionList.Add(new AIActionFire());
-             }
-
-             return actionList;*/
-
-            List<AIAction> actionList = new List<AIAction>();
+        public State SickDodge()
+        {
             List<PlayerInformations> playerInfos = AIGameWorldUtils.GetPlayerInfosList();
             PlayerInformations myPlayerInfos = GetPlayerInfos(AIId, playerInfos);
-
-            PlayerInformations target = null;
-            foreach (PlayerInformations playerInfo in playerInfos)
-            {
-                if (!playerInfo.IsActive)
-                    continue;
-
-                if (playerInfo.PlayerId == myPlayerInfos.PlayerId)
-                    continue;
-
-                target = playerInfo;
-                break;
-            }
-
-            if (target == null)
-                return actionList;
-
-            actionList.Add(new AIActionLookAtPosition(target.Transform.Position));
-
-            if (Vector3.Distance(myPlayerInfos.Transform.Position, target.Transform.Position) > 10.0f)
-                actionList.Add(new AIActionMoveToDestination(target.Transform.Position));
-            else
-                actionList.Add(new AIActionStopMovement());
-
+            List<ProjectileInformations> projectiles = AIGameWorldUtils.GetProjectileInfosList();
+           
+            Vector3 movePosition = myPlayerInfos.Transform.Position;
             RaycastHit hit;
-            Vector3 direction = myPlayerInfos.Transform.Rotation * Vector3.forward;
-            if (Physics.Raycast(myPlayerInfos.Transform.Position, direction.normalized, out hit, 100.0f))
-            {
-                if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.collider.gameObject.layer)))
-                    actionList.Add(new AIActionFire());
-            }
 
+            /*foreach (ProjectileInformations projectile in projectiles)
+            {
+               if (Physics.Raycast(projectile.Transform.Position, projectile.Transform.Rotation * Vector3.forward,out hit,Mathf.Infinity))
+               {                    
+                    if(hit.transform.gameObject.transform.position == myPlayerInfos.Transform.Position)
+                    {                        
+                        //movePosition += CalculateTangent((myPlayerInfos.Transform.Position- hit.transform.position).normalized) *20.0f;
+                        movePosition += new Vector3(1, 0, 0);
+                    }
+               }
+            }*/
+            string aaa = "";
+            aaa += movePosition;
+            movePosition += new Vector3(1, 0, 0);
+            aaa += " " + movePosition;
+            NavMeshHit nhit;
+            if (NavMesh.SamplePosition(movePosition, out nhit, Mathf.Infinity, NavMesh.AllAreas))
+            {
+                movePosition = nhit.position;
+            }
+            aaa += " " + movePosition;
+            Debug.LogError(aaa);
+
+            actionList.Add(new AIActionFire());            
+            return State.Success;
+        }
+
+
+        public List<AIAction> ComputeAIDecision()
+        {
+            if(nodeManager == null)
+            {
+                Selector selector = new Selector();
+                selector.AddChild(new Node(SickDodge));
+                nodeManager = new NodeManager(selector); 
+            }
+            actionList.Clear();
+            nodeManager.update();            
             return actionList;
         }
 
@@ -114,7 +95,7 @@ namespace AI_BehaviorTree_AIImplementation
             return null;
         }
 
-        public NodeManager nodeManager;
-        //public List<AIAction> actionList = new List<AIAction>();
+        public NodeManager nodeManager = null;
+        public List<AIAction> actionList = new List<AIAction>();
     }
 }

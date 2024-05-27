@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Albarello</RootNamespace>
-    <AssemblyName>AI_BehaviorTree_AIImplementation_2</AssemblyName>
+    <AssemblyName>AI_BehaviorTree_AIImplementation_0</AssemblyName>
     <DefaultLanguage>fr-FR</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.19041.0</TargetPlatformVersion>
@@ -22,7 +22,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\..\RedLock-master\</OutputPath>
     <DefineConstants>DEBUG;TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -130,14 +130,11 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AI_BehaviorTree_AIImplementation.csproj">
-      <Project>{b8ab6df7-a5f6-408b-a1cc-85f7cc22b68a}</Project>
-      <Name>AI_BehaviorTree_AIImplementation</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="AI_BehaviorTree_AIGameUtility">
       <HintPath>..\..\..\RedLock-master\Red Lock_Data\Managed\AI_BehaviorTree_AIGameUtility.dll</HintPath>
+    </Reference>
+    <Reference Include="Tree_Source">
+      <HintPath>..\bin\Debug\Tree_Source.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\..\Program Files\Unity\Hub\Editor\2022.3.30f1\Editor\Data\Managed\UnityEngine.dll</HintPath>
