@@ -5,7 +5,7 @@ VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AI_BehaviorTree_AIImplementation", "AI_BehaviorTree_AIImplementation.csproj", "{B8AB6DF7-A5F6-408B-A1CC-85F7CC22B68A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurandPierre", "..\DurandPierre\DurandPierre.csproj", "{DA3C48F6-581D-4B98-8E73-37C6E61A799D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurandPierre", "DurandPierre\DurandPierre.csproj", "{DA3C48F6-581D-4B98-8E73-37C6E61A799D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
