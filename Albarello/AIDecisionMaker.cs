@@ -94,14 +94,14 @@ namespace AI_BehaviorTree_AIImplementation
                     {
                         lastDist = dist;
                         idTarget = i;
-                        if(idLastTarget != idTarget)
-                        {
-                            lastPosition = playerInfos[i].Transform.Position;
-                            lastTime = Time.time;
-                            idLastTarget = idTarget;
-                        }
                     }                    
                 }
+            }
+            if (idLastTarget != idTarget)
+            {
+                lastPosition = idTarget == -1 ? Vector3.zero : playerInfos[idTarget].Transform.Position;
+                lastTime = Time.time;
+                idLastTarget = idTarget;
             }
             return idTarget != -1 ? State.Success : State.Failure;            
         }
@@ -132,14 +132,19 @@ namespace AI_BehaviorTree_AIImplementation
             PlayerInformations target = GetPlayerInfos(idTarget, playerInfos);
             Vector3 finalPosition = target.Transform.Position;
             Vector3 direction = -(lastPosition - target.Transform.Position);
-            if (Vector3.Magnitude(direction) > 0.05f)
+            lastDirection = Vector3.Lerp(lastDirection, direction,Time.deltaTime*5.0f);
+            direction = lastDirection;
+            if (Vector3.Magnitude(direction) > 0.0f)
             {
                 finalPosition = PredictTargetPosition(target.Transform.Position, direction, Time.time - lastTime);
-                actionList.Add(new AIActionLookAtPosition(finalPosition));
+                actionList.Add(new AIActionLookAtPosition(finalPosition + new Vector3(0.0f, 0.3f, 0.0f)));
                 lastPosition = target.Transform.Position;
                 lastTime = Time.time;
-            }            
-
+            }
+            else
+            {
+                actionList.Add(new AIActionLookAtPosition(finalPosition + new Vector3(0.0f, 0.3f, 0.0f)));
+            }
             actionList.Add(new AIActionFire());
             return State.Success;
         }
@@ -150,13 +155,16 @@ namespace AI_BehaviorTree_AIImplementation
             if (idTarget != -1)
             {
                 PlayerInformations target = GetPlayerInfos(idTarget, playerInfos);
-                RaycastHit hit;
-                if (Physics.Raycast(myPlayerInfos.Transform.Position, (target.Transform.Position - myPlayerInfos.Transform.Position).normalized, out hit))
+                if (target.IsActive)
                 {
-                    if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.transform.gameObject.layer)))
+                    RaycastHit hit;
+                    if (Physics.Raycast(myPlayerInfos.Transform.Position, (target.Transform.Position - myPlayerInfos.Transform.Position).normalized, out hit))
                     {
-                        seeTarget = true;
-                    }
+                        if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.transform.gameObject.layer)))
+                        {
+                            seeTarget = true;
+                        }
+                    }                    
                 }
             }
             if(!seeTarget)
@@ -180,6 +188,13 @@ namespace AI_BehaviorTree_AIImplementation
                         }
                     }
                     actionList.Add(new AIActionMoveToDestination(bonus[index].Position));
+                    if (myPlayerInfos.IsDashAvailable && (Time.time- dashTime) > 6.0f)
+                    {
+                        Vector3 ndir = (bonus[index].Position - myPlayerInfos.Transform.Position);
+                        ndir.y = 0;
+                        actionList.Add(new AIActionDash(ndir));
+                        dashTime = Time.time;
+                    }
                 }
             }
             return State.Success;
@@ -192,23 +207,74 @@ namespace AI_BehaviorTree_AIImplementation
             return State.Success;
         }
 
+        public State Bonus()
+        {
+            List<BonusInformations> bonus = AIGameWorldUtils.GetBonusInfosList();
+            if (bonus.Count >= 1)
+            {
+                int index = 0;
+                float dist = Mathf.Infinity;
+                for (int i = 1; i < bonus.Count; i++)
+                {
+                    float nd = Vector3.Distance(myPlayerInfos.Transform.Position, bonus[i].Position);
+                    if (nd < dist || bonus[i].Type != EBonusType.Health)
+                    {
+                        dist = nd;
+                        index = i;
+                        if (bonus[i].Type != EBonusType.Health)
+                        {
+                            break;
+                        }
+                    }
+                }
+                actionList.Add(new AIActionMoveToDestination(bonus[index].Position));
+                if (myPlayerInfos.IsDashAvailable)
+                {
+                    Vector3 ndir = (bonus[index].Position - myPlayerInfos.Transform.Position);
+                    ndir.y = 0;
+                    if(agent.desiredVelocity.magnitude > 0.1f)
+                    {
+                        ndir = agent.desiredVelocity;
+                    }
+                    actionList.Add(new AIActionDash(ndir));
+                }
+            }
+            else
+            {
+                return State.Failure;
+            }
+            return State.Success;
+        }
+
         public List<AIAction> ComputeAIDecision()
         {
-            if (nodeManager == null)
-            {
-                lastTime = Time.time;
-                Sequence sequence = new Sequence();
-                sequence.AddChild(new Node(SickDodge));                
-                sequence.AddChild(new Node(FindTarget));                
-                sequence.AddChild(new Node(Shoot));
-                sequence.AddChild(new Node(FindBonus));
-                // sequence.AddChild(new Node(MoveTarget));                
-                nodeManager = new NodeManager(sequence);
-            }
-            actionList.Clear();
             playerInfos = AIGameWorldUtils.GetPlayerInfosList();
             myPlayerInfos = GetPlayerInfos(AIId, playerInfos);
             projectiles = AIGameWorldUtils.GetProjectileInfosList();
+            if (nodeManager == null)
+            {
+                lastTime = Time.time;
+                //autoriser par le prof de lire les donnes du navMesh
+                NavMeshAgent[] array = GameObject.FindObjectsByType<NavMeshAgent>(FindObjectsSortMode.None);
+                for(int i = 0; i < array.Length && agent == null; i++)
+                {
+                    if(array[i].gameObject.transform.position == myPlayerInfos.Transform.Position)
+                    {
+                        agent = array[i];
+                    }
+                }
+                Sequence baseS = new Sequence();
+                Sequence attaque = new Sequence();
+                attaque.AddChild(new Node(FindTarget));
+                attaque.AddChild(new Node(Shoot));
+                Selector bonus = new Selector();
+                bonus.AddChild(new Node(Bonus));
+                bonus.AddChild(new Node(SickDodge));
+                baseS.AddChild(bonus);
+                baseS.AddChild(attaque);              
+                nodeManager = new NodeManager(baseS);
+            }
+            actionList.Clear();
             nodeManager.update();            
             return actionList;
         }
@@ -229,11 +295,14 @@ namespace AI_BehaviorTree_AIImplementation
         int idTarget = -1;
         int idLastTarget = -1;
         private Vector3 lastPosition;
+        private Vector3 lastDirection = new Vector3(0,0,0);
         private float lastTime;
         public NodeManager nodeManager = null;
         public List<AIAction> actionList = new List<AIAction>();
         public List<PlayerInformations> playerInfos;
         public PlayerInformations myPlayerInfos;
         public List<ProjectileInformations> projectiles;
+        NavMeshAgent agent = null;
+        private float dashTime = 0.0f;
     }
 }
