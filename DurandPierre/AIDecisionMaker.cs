@@ -151,6 +151,7 @@ namespace AI_BehaviorTree_AIImplementation
             PlayerInformations myPlayerInfos = GetPlayerInfos(AIId, playerInfos);
             if (target != null)
             {
+                var nextDash = target.Transform.Position - myPlayerInfos.Transform.Position;
                 actionList.Add(new AIActionDash(target.Transform.Position - myPlayerInfos.Transform.Position));
                 return State.Success;
             }
