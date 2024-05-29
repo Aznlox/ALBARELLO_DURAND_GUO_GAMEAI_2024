@@ -112,7 +112,7 @@ namespace AI_BehaviorTree_AIImplementation
 
         Vector3 PredictTargetPosition(Vector3 positionTarget, Vector3 nonNormalizeDirectionTarget, float timeElapsed)
         {
-            float bulletSpeed = 40.0f;
+            float bulletSpeed = 40.0f * Mathf.Pow(2,myPlayerInfos.BonusOnPlayer[EBonusType.BulletSpeed]);
             // Vitesse de la cible en m/s
             Vector3 targetVelocity = nonNormalizeDirectionTarget / timeElapsed;
 
@@ -131,31 +131,37 @@ namespace AI_BehaviorTree_AIImplementation
         {
             if (idTarget == -1)
             {
-                return State.Failure;
+                if (myPlayerInfos.SalvoRemainingAmount < 10)
+                {
+                    actionList.Add(new AIActionReload());
+                }
+                return State.Success;
             }                  
             PlayerInformations target = GetPlayerInfos(idTarget, playerInfos);
             Vector3 finalPosition = target.Transform.Position;
             Vector3 direction = -(lastPosition - target.Transform.Position);
-            
-            if (Vector3.Magnitude(direction) > 0.025f)
-            {
-                finalPosition = PredictTargetPosition(target.Transform.Position, direction, Time.time - lastTime);
-                actionList.Add(new AIActionLookAtPosition(finalPosition + new Vector3(0.0f, 0.1f, 0.0f)));
-                lastPosition = target.Transform.Position;
-                lastTime = Time.time;
-            }
-            bool seeTrarget = false;
+            finalPosition = PredictTargetPosition(target.Transform.Position, direction, Time.time - lastTime);
+            lastPosition = target.Transform.Position;
+            lastTime = Time.time;
+            actionList.Add(new AIActionLookAtPosition(finalPosition + new Vector3(0.0f, 0.1f, 0.0f)));
+
+            bool seeTarget = false;
             RaycastHit hit;
-            if (Physics.Raycast(myPlayerInfos.Transform.Position, (target.Transform.Position - myPlayerInfos.Transform.Position).normalized, out hit, 100.0f))
+            Vector3 dirTarget = (target.Transform.Position - myPlayerInfos.Transform.Position).normalized;
+            if (Physics.Raycast(myPlayerInfos.Transform.Position, dirTarget, out hit, 100.0f))
             {
                 if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.transform.gameObject.layer)))
                 {
-                    seeTrarget = true;
+                    seeTarget = true;
                 }
             }
-            if (seeTrarget)
+            if (seeTarget)
             {
-                actionList.Add(new AIActionFire());
+                float cos = Mathf.Cos(15 * Mathf.Deg2Rad);  // 15 degrés en radians
+                if (Vector3.Dot((myPlayerInfos.Transform.Rotation*Vector3.forward).normalized, (finalPosition - myPlayerInfos.Transform.Position).normalized) > cos)
+                {
+                    actionList.Add(new AIActionFire());
+                }                
             }
             else if(myPlayerInfos.SalvoRemainingAmount < 10)
             {
