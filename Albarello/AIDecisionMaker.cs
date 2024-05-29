@@ -25,7 +25,7 @@ namespace AI_BehaviorTree_AIImplementation
         // Vous pouvez modifier le contenu de cette fonction pour modifier votre nom en jeu
         public string GetName() { return "GOD"; }
 
-        public void SetAIGameWorldUtils(GameWorldUtils parGameWorldUtils) { AIGameWorldUtils = parGameWorldUtils; }
+        public void SetAIGameWorldUtils(GameWorldUtils parGameWorldUtils) { AIGameWorldUtils = parGameWorldUtils; }        
 
         Vector3 CalculateTangent(Vector3 v)
         {
@@ -86,16 +86,19 @@ namespace AI_BehaviorTree_AIImplementation
             float dist;
             float lastDist = Mathf.Infinity;
             for (int i = 0; i < playerInfos.Count; i++)
-            {
-                //&& !playerInfos[i].BonusOnPlayer.ContainsKey(EBonusType.Invulnerability)
+            {          
                 if (playerInfos[i].PlayerId != myPlayerInfos.PlayerId && playerInfos[i].IsActive)
                 {
+                    if (modeTeam && whiteList.Contains(playerInfos[i].Name))
+                    {
+                        continue;
+                    }
                     dist = Vector3.Distance(playerInfos[i].Transform.Position, myPlayerInfos.Transform.Position);
                     if (dist < lastDist)
                     {
                         lastDist = dist;
                         idTarget = i;
-                    }                    
+                    }                      
                 }
             }
             if (idLastTarget != idTarget)
@@ -133,7 +136,7 @@ namespace AI_BehaviorTree_AIImplementation
             PlayerInformations target = GetPlayerInfos(idTarget, playerInfos);
             Vector3 finalPosition = target.Transform.Position;
             Vector3 direction = -(lastPosition - target.Transform.Position);
-            //if(Vector3.Distance(target.Transform.Position,))
+            
             if (Vector3.Magnitude(direction) > 0.025f)
             {
                 finalPosition = PredictTargetPosition(target.Transform.Position, direction, Time.time - lastTime);
@@ -141,7 +144,23 @@ namespace AI_BehaviorTree_AIImplementation
                 lastPosition = target.Transform.Position;
                 lastTime = Time.time;
             }
-            actionList.Add(new AIActionFire());
+            bool seeTrarget = false;
+            RaycastHit hit;
+            if (Physics.Raycast(myPlayerInfos.Transform.Position, (target.Transform.Position - myPlayerInfos.Transform.Position).normalized, out hit, 100.0f))
+            {
+                if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.transform.gameObject.layer)))
+                {
+                    seeTrarget = true;
+                }
+            }
+            if (seeTrarget)
+            {
+                actionList.Add(new AIActionFire());
+            }
+            else if(myPlayerInfos.SalvoRemainingAmount < 10)
+            {
+                actionList.Add(new AIActionReload());
+            }
             return State.Success;
         }
 
@@ -250,6 +269,13 @@ namespace AI_BehaviorTree_AIImplementation
             if (nodeManager == null)
             {
                 lastTime = Time.time;
+                for(int i = 0; i < playerInfos.Count && !modeTeam; i++)
+                {
+                    if (!whiteList.Contains(playerInfos[i].Name))
+                    {
+                        modeTeam = true;
+                    }
+                }
                 //autoriser par le prof de lire les donnes du navMesh
                 NavMeshAgent[] array = GameObject.FindObjectsByType<NavMeshAgent>(FindObjectsSortMode.None);
                 for(int i = 0; i < array.Length && agent == null; i++)
@@ -290,6 +316,8 @@ namespace AI_BehaviorTree_AIImplementation
         int countDodge = 0;
         int idTarget = -1;
         int idLastTarget = -1;
+        public List<string> whiteList = new List<string> { "GodSlayer","GOD","KS","Risitas"};
+        public bool modeTeam = false;
         private Vector3 lastPosition;
         private Vector3 lastDirection = new Vector3(0,0,0);
         private float lastTime;
