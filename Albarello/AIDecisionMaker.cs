@@ -87,6 +87,7 @@ namespace AI_BehaviorTree_AIImplementation
             float lastDist = Mathf.Infinity;
             for (int i = 0; i < playerInfos.Count; i++)
             {
+                //&& !playerInfos[i].BonusOnPlayer.ContainsKey(EBonusType.Invulnerability)
                 if (playerInfos[i].PlayerId != myPlayerInfos.PlayerId && playerInfos[i].IsActive)
                 {
                     dist = Vector3.Distance(playerInfos[i].Transform.Position, myPlayerInfos.Transform.Position);
@@ -132,18 +133,13 @@ namespace AI_BehaviorTree_AIImplementation
             PlayerInformations target = GetPlayerInfos(idTarget, playerInfos);
             Vector3 finalPosition = target.Transform.Position;
             Vector3 direction = -(lastPosition - target.Transform.Position);
-            lastDirection = Vector3.Lerp(lastDirection, direction,Time.deltaTime*5.0f);
-            direction = lastDirection;
-            if (Vector3.Magnitude(direction) > 0.0f)
+            //if(Vector3.Distance(target.Transform.Position,))
+            if (Vector3.Magnitude(direction) > 0.025f)
             {
                 finalPosition = PredictTargetPosition(target.Transform.Position, direction, Time.time - lastTime);
-                actionList.Add(new AIActionLookAtPosition(finalPosition + new Vector3(0.0f, 0.3f, 0.0f)));
+                actionList.Add(new AIActionLookAtPosition(finalPosition + new Vector3(0.0f, 0.1f, 0.0f)));
                 lastPosition = target.Transform.Position;
                 lastTime = Time.time;
-            }
-            else
-            {
-                actionList.Add(new AIActionLookAtPosition(finalPosition + new Vector3(0.0f, 0.3f, 0.0f)));
             }
             actionList.Add(new AIActionFire());
             return State.Success;
