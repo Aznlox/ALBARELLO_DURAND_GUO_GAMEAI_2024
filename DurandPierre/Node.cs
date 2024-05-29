@@ -42,6 +42,5 @@ namespace AI_BehaviorTree_AIImplementation
         {
             state = State.NotExecuted;
         }
-        
     }
 }

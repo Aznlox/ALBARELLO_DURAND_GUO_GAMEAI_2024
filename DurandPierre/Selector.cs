@@ -4,7 +4,7 @@ namespace AI_BehaviorTree_AIImplementation
 {
     class Selector : Node
     {
-        protected List<Node> child;
+        protected List<Node> child = new List<Node>();
 
         public void AddChild(Node node)
         {
