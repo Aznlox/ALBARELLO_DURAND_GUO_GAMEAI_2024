@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AI_BehaviorTree_AIImplementation
+﻿namespace AI_BehaviorTree_AIImplementation
 {
     public class NodeManager
     {
-        Node start;
+        Node start = new Node();
         public NodeManager(Node s)
         {
             start = s;           

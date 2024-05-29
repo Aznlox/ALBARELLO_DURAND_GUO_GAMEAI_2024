@@ -42,8 +42,8 @@ namespace AI_BehaviorTree_AIImplementation
 
                 if (playerInfo.PlayerId == myPlayerInfos.PlayerId)
                     continue;
-                
-                
+
+                target = playerInfo;
                 break;
             }
 
