@@ -147,8 +147,8 @@ namespace AI_BehaviorTree_AIImplementation
 
             bool seeTarget = false;
             RaycastHit hit;
-            Vector3 dirTarget = (target.Transform.Position - myPlayerInfos.Transform.Position).normalized;
-            if (Physics.Raycast(myPlayerInfos.Transform.Position, dirTarget, out hit, 100.0f))
+            Vector3 dirTarget = (target.Transform.Position - (myPlayerInfos.Transform.Position + new Vector3(0.0f, 0.25f, 0.0f))).normalized;
+            if (Physics.Raycast(myPlayerInfos.Transform.Position+new Vector3(0.0f,0.25f,0.0f), dirTarget, out hit, 100.0f))
             {
                 if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.transform.gameObject.layer)))
                 {
