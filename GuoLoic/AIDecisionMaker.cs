@@ -21,10 +21,15 @@ namespace AI_BehaviorTree_AIImplementation
         public List<PlayerInformations> playerInfos;
         public PlayerInformations myPlayerInfos;
         public List<ProjectileInformations> projectiles;
+        public List<string> whiteList = new List<string> { "GodSlayer", "GOD", "KS", "Risitas" };
+        public bool isTeam = false;
+        public Vector3 lastPosition = Vector3.zero;
+        public float lastTime = 0f; 
 
         public GameWorldUtils AIGameWorldUtils = new GameWorldUtils();
 
         private Vector3 oldPos;
+        private PlayerInformations target = null;
 
         // Ne pas utiliser cette fonction, elle n'est utile que pour le jeu qui vous Set votre Id, si vous voulez votre Id utilisez AIId
         public void SetAIId(int parAIId) { AIId = parAIId; }
@@ -42,24 +47,29 @@ namespace AI_BehaviorTree_AIImplementation
         {
             playerInfos = AIGameWorldUtils.GetPlayerInfosList();
             myPlayerInfos = GetPlayerInfos(AIId, playerInfos);
+            int id = -1;
             for(int i = 0; i < playerInfos.Count; i++)
             {
                 if (playerInfos[i].PlayerId == myPlayerInfos.PlayerId)
                 {
-                    playerInfos.RemoveAt(i);
-                    break;
+                    id = i;
+                    continue;
+                }
+                if (!whiteList.Contains(playerInfos[i].Name))
+                {
+                    isTeam = true;
                 }
             }
-            playerInfos.RemoveAt(AIId);
-            projectiles = AIGameWorldUtils.GetProjectileInfosList();
+            playerInfos.RemoveAt(id);
 
             if (actionList == null)
             {
                 actionList = new List<AIAction>();
 
                 Sequence sequenceAlways = new Sequence();
-                sequenceAlways.AddChild(new Node(AlwaysShoot));
+                
                 sequenceAlways.AddChild(new Node(AimTarget));
+                sequenceAlways.AddChild(new Node(ShootReload));
 
                 Selector selectorMove = new Selector();
 
@@ -68,7 +78,7 @@ namespace AI_BehaviorTree_AIImplementation
                 sequenceMovetoBuff.AddChild(new Node(Dash));
 
                 Sequence sequenceStrafe = new Sequence();
-                sequenceStrafe.AddChild(new Node(Strafe));
+                sequenceStrafe.AddChild(new Node(PredictJammer));
                 sequenceStrafe.AddChild(new Node(Dash));
 
                 selectorMove.AddChild(sequenceMovetoBuff);
@@ -76,44 +86,96 @@ namespace AI_BehaviorTree_AIImplementation
 
                 sequenceAlways.AddChild(selectorMove);
 
-
                 nodeManager = new NodeManager(sequenceAlways);
             }
 
             actionList.Clear();
             
-        
             nodeManager.update();
             oldPos = myPlayerInfos.Transform.Position;
 
             return actionList;
         }
 
-        public State AlwaysShoot()
+        Vector3 PredictTargetPosition(Vector3 positionTarget, Vector3 nonNormalizeDirectionTarget, float timeElapsed)
         {
+            float bulletSpeed = 40.0f * Mathf.Pow(2, myPlayerInfos.BonusOnPlayer[EBonusType.BulletSpeed]);
+            // Vitesse de la cible en m/s
+            Vector3 targetVelocity = nonNormalizeDirectionTarget / timeElapsed;
 
-            actionList.Add(new AIActionFire());
+            // Calcul du temps
+            Vector3 toTarget = positionTarget - myPlayerInfos.Transform.Position;
+            float distanceToTarget = toTarget.magnitude;
+            float timeToReachTarget = distanceToTarget / bulletSpeed;
+
+            // Position predite de la cible
+            Vector3 futureTargetPosition = positionTarget + targetVelocity * timeToReachTarget;
+
+            return futureTargetPosition;
+        }
+
+        public State ShootReload()
+        {
+            if (target == null)
+            {
+                if (myPlayerInfos.SalvoRemainingAmount < 10)
+                {
+                    actionList.Add(new AIActionReload());
+                }
+                return State.Success;
+            }
+            bool seeTarget = false;
+            Vector3 finalPosition = target.Transform.Position;
+            Vector3 direction = -(lastPosition - target.Transform.Position);
+            finalPosition = PredictTargetPosition(target.Transform.Position, direction, Time.time - lastTime);
+            lastPosition = target.Transform.Position;
+            lastTime = Time.time;
+            actionList.Add(new AIActionLookAtPosition(finalPosition));
+
+            RaycastHit hit;
+            if (Physics.Raycast(myPlayerInfos.Transform.Position, (target.Transform.Position - myPlayerInfos.Transform.Position).normalized, out hit, 150.0f))
+            {
+                if (AIGameWorldUtils.PlayerLayerMask == (AIGameWorldUtils.PlayerLayerMask | (1 << hit.transform.gameObject.layer)))
+                {
+                    seeTarget = true;
+                }
+            }
+            if (seeTarget)
+            {
+                float cos = Mathf.Cos(15 * Mathf.Deg2Rad);  // 15 degrés en radians
+                if (Vector3.Dot((myPlayerInfos.Transform.Rotation * Vector3.forward).normalized, (finalPosition - myPlayerInfos.Transform.Position).normalized) > cos)
+                {
+                    actionList.Add(new AIActionFire());
+                }
+            }
+            else if (myPlayerInfos.SalvoRemainingAmount < 10)
+            {
+                actionList.Add(new AIActionReload());
+            }
             return State.Success;
         }
 
         public State AimTarget()
         {
-            PlayerInformations target = playerInfos[0];
+            target = null;
             foreach(PlayerInformations playerInfo in playerInfos)
             {
-                target = playerInfo;
-
-                if (playerInfo.PlayerId == myPlayerInfos.PlayerId)
+                if (isTeam && whiteList.Contains(playerInfo.Name))
                 {
                     continue;
                 }
 
-                if (playerInfo.CurrentHealth < target.CurrentHealth && playerInfo.IsActive)
+                if (target == null || playerInfo.CurrentHealth < target.CurrentHealth && playerInfo.IsActive)
                 {
                     target = playerInfo;
                 }
+                
             }
-            actionList.Add(new AIActionLookAtPosition(target.Transform.Position));
+            if(target == null)
+            {
+                return State.Success;
+            }
+            
             return State.Success;
         }
 
@@ -129,7 +191,6 @@ namespace AI_BehaviorTree_AIImplementation
             moveTo = bonus[0].Position;
             foreach (BonusInformations bonu in bonus)
             {
-
                 if (Vector3.Distance(bonu.Position, myPlayerInfos.Transform.Position) < Vector3.Distance(moveTo, myPlayerInfos.Transform.Position))
                 {
                     moveTo = bonu.Position;
@@ -139,9 +200,9 @@ namespace AI_BehaviorTree_AIImplementation
             return State.Success;
         }
 
-        public State Strafe()
+        public State PredictJammer()
         {
-            Vector3 moveTo = myPlayerInfos.Transform.Position + UnityEngine.Random.insideUnitSphere * 30f;
+            Vector3 moveTo = myPlayerInfos.Transform.Position + UnityEngine.Random.insideUnitSphere * 60f;
             NavMeshHit nhit;
             if (NavMesh.SamplePosition(moveTo, out nhit, Mathf.Infinity, NavMesh.AllAreas))
             {
